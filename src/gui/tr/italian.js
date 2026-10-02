@@ -95,6 +95,10 @@ var TR = {
 
   // sculpt
   sculptTitle: 'Scalpisci & Dipingi',
+  clayAddTitle: 'AGGIUNGI ARGILLA',
+  clayAddLarge: 'Pezzo grande',
+  clayAddMedium: 'Pezzo medio',
+  clayAddSmall: 'Pezzo piccolo',
   sculptBrush: 'Spazzola',
   sculptInflate: 'Gonfia',
   sculptTwist: 'Torci',
