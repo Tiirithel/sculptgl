@@ -5,6 +5,7 @@ import Utils from 'misc/Utils';
 import SculptManager from 'editing/SculptManager';
 import Subdivision from 'editing/Subdivision';
 import Remesh from 'editing/Remesh';
+import Smooth from 'editing/tools/Smooth';
 import Import from 'files/Import';
 import Gui from 'gui/Gui';
 import Camera from 'math3d/Camera';
@@ -46,6 +47,7 @@ class Scene {
     // TODO primitive builder
     this._meshPreview = null;
     this._clayAddSize = null; // one-shot Clay material placement mode
+    this._clayAddShape = 'round';
     this._torusLength = 0.5;
     this._torusWidth = 0.1;
     this._torusRadius = Math.PI * 2;
@@ -499,12 +501,49 @@ class Scene {
     }
   }
 
-  armClayAddition(size) {
+  armClayAddition(size, shape) {
     this._clayAddSize = size;
+    this._clayAddShape = shape || 'round';
     this.setCanvasCursor('crosshair');
   }
 
-  addClayAtCursor(size) {
+  _smoothClayJunction(mesh, worldPoint, worldRadius) {
+    var inv = mat4.create();
+    mat4.invert(inv, mesh.getMatrix());
+
+    var center = vec3.clone(worldPoint);
+    vec3.transformMat4(center, center, inv);
+
+    var localRadius = worldRadius / mesh.getScale();
+    var radius2 = localRadius * localRadius;
+    var vertices = mesh.getVertices();
+    var picked = [];
+    for (var i = 0, nb = mesh.getNbVertices(); i < nb; ++i) {
+      var id = i * 3;
+      var dx = vertices[id] - center[0];
+      var dy = vertices[id + 1] - center[1];
+      var dz = vertices[id + 2] - center[2];
+      if (dx * dx + dy * dy + dz * dz <= radius2)
+        picked.push(i);
+    }
+
+    if (!picked.length)
+      return;
+
+    var indices = new Uint32Array(picked);
+    var smooth = new Smooth();
+    smooth.setToolMesh(mesh);
+
+    // Blend only the attachment zone. One normal smooth softens the ridge,
+    // then tangential relax evens topology without shrinking the whole model.
+    smooth.smooth(indices, 0.30);
+    mesh.updateGeometry();
+    smooth.smoothTangent(indices, 0.60);
+    mesh.updateGeometry();
+    mesh.updateGeometryBuffers();
+  }
+
+  addClayAtCursor(size, shape) {
     var picking = this._picking;
     if (!picking.intersectionMouseMeshes())
       return false;
@@ -530,17 +569,51 @@ class Scene {
     if (size === 'large') factor = 0.50;
     else if (size === 'small') factor = 0.22;
 
-    // Build a rounded, slightly irregular lump from the same primitive used
-    // by SculptGL for its default sphere, then squash it a little.
-    var blob = new Multimesh(Primitives.createCube(this._gl));
-    blob.normalizeSize();
-    this.subdivideClamp(blob);
-    var blobMatrix = blob.getMatrix();
-    mat4.scale(blobMatrix, blobMatrix, [factor * 1.15, factor * 0.90, factor]);
+    shape = shape || 'round';
 
-    // Keep a substantial overlap with the existing sculpture so the voxel
-    // union reads as added clay rather than a separate ball.
-    var offset = factor * Utils.SCALE * 0.10;
+    var blob;
+    var blobMatrix;
+    if (shape === 'block') {
+      // A rectangular chunk is useful for jaw, cheek planes and larger masses.
+      // Keep it simple and physical: a clay block rather than a digital brush.
+      blob = Primitives.createCube(this._gl);
+      blob.normalizeSize();
+      blobMatrix = blob.getMatrix();
+
+      // Orient the block to the surface: Z follows the normal, X/Y span
+      // the tangent plane. This makes placement useful from any camera angle.
+      var reference = Math.abs(normal[1]) < 0.90 ? [0.0, 1.0, 0.0] : [1.0, 0.0, 0.0];
+      var tangent = vec3.create();
+      var bitangent = vec3.create();
+      vec3.cross(tangent, reference, normal);
+      vec3.normalize(tangent, tangent);
+      vec3.cross(bitangent, normal, tangent);
+      vec3.normalize(bitangent, bitangent);
+
+      blobMatrix[0] = tangent[0];
+      blobMatrix[1] = tangent[1];
+      blobMatrix[2] = tangent[2];
+      blobMatrix[4] = bitangent[0];
+      blobMatrix[5] = bitangent[1];
+      blobMatrix[6] = bitangent[2];
+      blobMatrix[8] = normal[0];
+      blobMatrix[9] = normal[1];
+      blobMatrix[10] = normal[2];
+
+      // Longer and flatter than the round piece: deliberately "jaw friendly".
+      mat4.scale(blobMatrix, blobMatrix, [factor * 1.55, factor * 0.90, factor * 0.62]);
+    } else {
+      // Rounded portion of clay.
+      blob = new Multimesh(Primitives.createCube(this._gl));
+      blob.normalizeSize();
+      this.subdivideClamp(blob);
+      blobMatrix = blob.getMatrix();
+      mat4.scale(blobMatrix, blobMatrix, [factor * 1.15, factor * 0.90, factor]);
+    }
+
+    // Bury the piece slightly into the sculpture so the union has a broad
+    // contact patch rather than a narrow stitched-looking ring.
+    var offset = factor * Utils.SCALE * (shape === 'block' ? -0.04 : 0.02);
     vec3.scaleAndAdd(hit, hit, normal, offset);
     blobMatrix[12] = hit[0];
     blobMatrix[13] = hit[1];
@@ -551,6 +624,10 @@ class Scene {
     targetCopy.copyData(target);
 
     var newMesh = Remesh.remesh([targetCopy, blob], targetCopy, true);
+
+    // Soften only the attachment zone; this attacks the "stitched seam"
+    // without globally erasing existing sculpted detail.
+    this._smoothClayJunction(newMesh, hit, factor * Utils.SCALE * 0.85);
 
     // Record one undoable operation and replace the sculpture in-place.
     this._stateManager.pushStateAddRemove(newMesh, target);
