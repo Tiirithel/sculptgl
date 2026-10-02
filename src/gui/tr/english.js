@@ -96,6 +96,8 @@ var TR = {
   // sculpt
   sculptTitle: 'Sculpting & Painting',
   clayAddTitle: 'ADD CLAY',
+  clayAddRoundTitle: 'ROUND CLAY',
+  clayAddBlockTitle: 'BLOCK CLAY',
   clayAddLarge: 'Large piece',
   clayAddMedium: 'Medium piece',
   clayAddSmall: 'Small piece',
