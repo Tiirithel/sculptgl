@@ -105,9 +105,10 @@ var TR = {
   sculptDrag: 'Drag',
   sculptPaint: 'Paint',
   sculptMasking: 'Masking (-Ctrl)',
-  sculptMove: 'Move',
+  sculptMove: 'Hand',
   sculptLocalScale: 'Local scale',
   sculptTransform: 'Transform (E)',
+  clayHandSize: 'Hand size',
 
   sculptCommon: 'Common',
   sculptTool: 'Tool',
