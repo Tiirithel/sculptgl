@@ -1,9 +1,10 @@
-import { vec3, mat4 } from 'gl-matrix';
+import { vec3, mat3, mat4 } from 'gl-matrix';
 import getOptionsURL from 'misc/getOptionsURL';
 import Enums from 'misc/Enums';
 import Utils from 'misc/Utils';
 import SculptManager from 'editing/SculptManager';
 import Subdivision from 'editing/Subdivision';
+import Remesh from 'editing/Remesh';
 import Import from 'files/Import';
 import Gui from 'gui/Gui';
 import Camera from 'math3d/Camera';
@@ -44,6 +45,7 @@ class Scene {
 
     // TODO primitive builder
     this._meshPreview = null;
+    this._clayAddSize = null; // one-shot Clay material placement mode
     this._torusLength = 0.5;
     this._torusWidth = 0.1;
     this._torusRadius = Math.PI * 2;
@@ -495,6 +497,66 @@ class Scene {
       var mat = meshes[i].getMatrix();
       mat4.mul(mat, mCen, mat);
     }
+  }
+
+  armClayAddition(size) {
+    this._clayAddSize = size;
+    this.setCanvasCursor('crosshair');
+  }
+
+  addClayAtCursor(size) {
+    var picking = this._picking;
+    if (!picking.intersectionMouseMeshes())
+      return false;
+
+    var target = picking.getMesh();
+    if (!target)
+      return false;
+
+    picking.computePickedNormal();
+
+    // Convert the picked point and normal to world space.
+    var hit = vec3.clone(picking.getIntersectionPoint());
+    vec3.transformMat4(hit, hit, target.getMatrix());
+
+    var normal = vec3.clone(picking.getPickedNormal());
+    var normalMatrix = mat3.create();
+    mat3.normalFromMat4(normalMatrix, target.getMatrix());
+    vec3.transformMat3(normal, normal, normalMatrix);
+    vec3.normalize(normal, normal);
+
+    // Three deliberately discrete portions of material.
+    var factor = 0.35;
+    if (size === 'large') factor = 0.50;
+    else if (size === 'small') factor = 0.22;
+
+    // Build a rounded, slightly irregular lump from the same primitive used
+    // by SculptGL for its default sphere, then squash it a little.
+    var blob = new Multimesh(Primitives.createCube(this._gl));
+    blob.normalizeSize();
+    this.subdivideClamp(blob);
+    var blobMatrix = blob.getMatrix();
+    mat4.scale(blobMatrix, blobMatrix, [factor * 1.15, factor * 0.90, factor]);
+
+    // Keep a substantial overlap with the existing sculpture so the voxel
+    // union reads as added clay rather than a separate ball.
+    var offset = factor * Utils.SCALE * 0.10;
+    vec3.scaleAndAdd(hit, hit, normal, offset);
+    blobMatrix[12] = hit[0];
+    blobMatrix[13] = hit[1];
+    blobMatrix[14] = hit[2];
+
+    // Remesh a copy of the current sculpture so undo keeps the original intact.
+    var targetCopy = new MeshStatic(this._gl);
+    targetCopy.copyData(target);
+
+    var newMesh = Remesh.remesh([targetCopy, blob], targetCopy, true);
+
+    // Record one undoable operation and replace the sculpture in-place.
+    this._stateManager.pushStateAddRemove(newMesh, target);
+    this.replaceMesh(target, newMesh);
+    this.render();
+    return true;
   }
 
   addSphere() {
