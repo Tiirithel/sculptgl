@@ -25,11 +25,11 @@
     "webpack-cli": "^4.5.0"
   },
   "scripts": {
-    "dev": "node_modules/.bin/webpack -w",
+    "dev": "node --openssl-legacy-provider ./node_modules/webpack/bin/webpack.js -w",
     "server": "http-server app -p 8080",
-    "release": "node_modules/.bin/webpack --env release",
-    "webad": "node_modules/.bin/webpack --env webad",
-    "website": "node_modules/.bin/webpack --env website",
+    "release": "node --openssl-legacy-provider ./node_modules/webpack/bin/webpack.js --env release",
+    "webad": "node --openssl-legacy-provider ./node_modules/webpack/bin/webpack.js --env webad",
+    "website": "node --openssl-legacy-provider ./node_modules/webpack/bin/webpack.js --env website",
     "buildElectron": "yarn release && rm -rf standalone/app/ && cp -R app/ standalone/ && cp package.json standalone",
     "standalone": "yarn buildElectron && cd standalone && node buildStandalone.js"
   },
