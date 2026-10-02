@@ -41,8 +41,8 @@ var setOnChange = function (key, factor, val) {
 };
 
 // some helper functions
-var addCtrlRadius = function (tool, fold, widget, main) {
-  var ctrl = fold.addSlider(TR('sculptRadius'), tool._radius, function (val) {
+var addCtrlRadius = function (tool, fold, widget, main, label) {
+  var ctrl = fold.addSlider(label || TR('sculptRadius'), tool._radius, function (val) {
     setOnChange.call(tool, '_radius', 1, val);
     main.getSculptManager().getSelection().setIsEditMode(true);
     main.renderSelectOverRtt();
@@ -242,11 +242,9 @@ GuiTools[Enums.Tools.LOCALSCALE] = {
 GuiTools[Enums.Tools.MOVE] = {
   _ctrls: [],
   init: function (tool, fold, main) {
-    this._ctrls.push(addCtrlRadius(tool, fold, this, main));
-    this._ctrls.push(addCtrlIntensity(tool, fold, this));
-    this._ctrls.push(fold.addCheckbox(TR('sculptTopologicalCheck'), tool, '_topoCheck'));
-    this._ctrls.push(addCtrlNegative(tool, fold, this, TR('sculptMoveAlongNormal')));
-    addCtrlAlpha(this._ctrls, fold, tool, this);
+    // Clay prototype: the Hand exposes only physical size.
+    // Intensity/topology/alpha stay internal until they map to material behavior.
+    this._ctrls.push(addCtrlRadius(tool, fold, this, main, TR('clayHandSize')));
   }
 };
 
