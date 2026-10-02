@@ -105,9 +105,10 @@ var TR = {
   sculptDrag: 'Trascina',
   sculptPaint: 'Dipingi',
   sculptMasking: 'Maschera (-Ctrl)',
-  sculptMove: 'Muovi',
+  sculptMove: 'Mano',
   sculptLocalScale: 'Scala Locale',
   sculptTransform: 'Trasformazioni (E)',
+  clayHandSize: 'Dimensione mano',
 
   sculptCommon: 'Comune',
   sculptTool: 'Strumento',
