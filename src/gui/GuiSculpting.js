@@ -37,6 +37,11 @@ class GuiSculpting {
     var menu = this._menu = guiParent.addMenu(TR('sculptTitle'));
     menu.open();
 
+    menu.addTitle(TR('clayAddTitle'));
+    menu.addButton(TR('clayAddLarge'), this, 'addClayLarge');
+    menu.addButton(TR('clayAddMedium'), this, 'addClayMedium');
+    menu.addButton(TR('clayAddSmall'), this, 'addClaySmall');
+
     menu.addTitle(TR('sculptTool'));
 
     // sculpt tool
@@ -57,6 +62,18 @@ class GuiSculpting {
     GuiSculptingTools.show(this._sculptManager.getToolIndex());
     this.addEvents();
     this.onChangeTool(this._sculptManager.getToolIndex());
+  }
+
+  addClayLarge() {
+    this._main.armClayAddition('large');
+  }
+
+  addClayMedium() {
+    this._main.armClayAddition('medium');
+  }
+
+  addClaySmall() {
+    this._main.armClayAddition('small');
   }
 
   onSymmetryChange(value) {
