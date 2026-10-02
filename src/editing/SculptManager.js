@@ -7,11 +7,11 @@ class SculptManager {
   constructor(main) {
     this._main = main;
 
-    this._toolIndex = Enums.Tools.BRUSH; // sculpting mode
+    this._toolIndex = Enums.Tools.MOVE; // Clay starts with the Hand tool
     this._tools = []; // the sculpting tools
 
     // symmetry stuffs
-    this._symmetry = true; // if symmetric sculpting is enabled  
+    this._symmetry = false; // Clay starts asymmetric, like physical sculpting  
 
     // continuous stuffs
     this._continuous = false; // continuous sculpting
