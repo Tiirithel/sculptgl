@@ -426,6 +426,16 @@ class SculptGL extends Scene {
     var mouseY = this._mouseY;
     var button = event.which;
 
+    // Clay material placement is a one-shot left-click action.
+    if (button === MOUSE_LEFT && this._clayAddSize) {
+      if (this.addClayAtCursor(this._clayAddSize)) {
+        this._clayAddSize = null;
+        this.setCanvasCursor('default');
+      }
+      this._action = Enums.Action.NOTHING;
+      return;
+    }
+
     var canEdit = false;
     if (button === MOUSE_LEFT)
       canEdit = this._sculptManager.start(event.shiftKey);
