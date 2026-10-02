@@ -37,10 +37,15 @@ class GuiSculpting {
     var menu = this._menu = guiParent.addMenu(TR('sculptTitle'));
     menu.open();
 
-    menu.addTitle(TR('clayAddTitle'));
-    menu.addButton(TR('clayAddLarge'), this, 'addClayLarge');
-    menu.addButton(TR('clayAddMedium'), this, 'addClayMedium');
-    menu.addButton(TR('clayAddSmall'), this, 'addClaySmall');
+    menu.addTitle(TR('clayAddRoundTitle'));
+    menu.addButton(TR('clayAddLarge'), this, 'addClayRoundLarge');
+    menu.addButton(TR('clayAddMedium'), this, 'addClayRoundMedium');
+    menu.addButton(TR('clayAddSmall'), this, 'addClayRoundSmall');
+
+    menu.addTitle(TR('clayAddBlockTitle'));
+    menu.addButton(TR('clayAddLarge'), this, 'addClayBlockLarge');
+    menu.addButton(TR('clayAddMedium'), this, 'addClayBlockMedium');
+    menu.addButton(TR('clayAddSmall'), this, 'addClayBlockSmall');
 
     menu.addTitle(TR('sculptTool'));
 
@@ -64,16 +69,28 @@ class GuiSculpting {
     this.onChangeTool(this._sculptManager.getToolIndex());
   }
 
-  addClayLarge() {
-    this._main.armClayAddition('large');
+  addClayRoundLarge() {
+    this._main.armClayAddition('large', 'round');
   }
 
-  addClayMedium() {
-    this._main.armClayAddition('medium');
+  addClayRoundMedium() {
+    this._main.armClayAddition('medium', 'round');
   }
 
-  addClaySmall() {
-    this._main.armClayAddition('small');
+  addClayRoundSmall() {
+    this._main.armClayAddition('small', 'round');
+  }
+
+  addClayBlockLarge() {
+    this._main.armClayAddition('large', 'block');
+  }
+
+  addClayBlockMedium() {
+    this._main.armClayAddition('medium', 'block');
+  }
+
+  addClayBlockSmall() {
+    this._main.armClayAddition('small', 'block');
   }
 
   onSymmetryChange(value) {
